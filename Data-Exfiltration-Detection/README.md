@@ -1,3 +1,6 @@
+This folder contains the setup and configuration of Splunk, the simulated attack and investigation, 
+artifacts, and Splunk searches for the internal credential compromise and data exfiltration lab.
+
 # Part One: Setting Up and Configuring Splunk 
 ## Overview
 In this portion of the lab, I set up Splunk Enterprise as a centralized logging and monitoring platform and configured it to ingest multiple 
