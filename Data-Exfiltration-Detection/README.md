@@ -1,6 +1,8 @@
 This folder contains the setup and configuration of Splunk, the simulated attack and investigation, 
 artifacts, and Splunk searches for the internal credential compromise and data exfiltration lab.
 
+---
+
 # Part One: Setting Up and Configuring Splunk 
 ## Overview
 In this portion of the lab, I set up Splunk Enterprise as a centralized logging and monitoring platform and configured it to ingest multiple 
@@ -21,6 +23,8 @@ By configuring continuous file monitoring and proper source types, Splunk was ab
 provide the visibility required to later reconstruct the full attack timeline and trigger alerts on suspicious behavior.
 
 This setup established the foundation for all detection, alerting, and investigation performed in the remainder of the lab.
+
+---
 
 ## Splunk Installation
 ### Package selection
@@ -48,6 +52,8 @@ The web interface was accessed at:
 `http://Ubuntu-Splunk:8000`
 
 An admin account was created during first launch.
+
+---
 
 ## Log Forwarding and Data Ingestion Configuration
 Instead of using external forwarders, I configured Splunk to monitor local log files directly on the system. This mirrors how a Splunk Universal 
@@ -82,6 +88,8 @@ Each log source was added using the Splunk Web UI.
 - sudo authentication events
 - su privilege escalation attempts
 
+---
+
 ## Data Source 2: Linux Audit Logs
 ### auditd installation:
 ```bash
@@ -112,6 +120,8 @@ sudo systemctl start auditd
 - Reads of sensitive files
 - chmod operations
 - Data staging activity
+
+---
 
 ## Data Source 3: Linux System Logs
 ### Log file:
@@ -155,6 +165,8 @@ This confirmed that:
 - sudo activity was logged
 - auditd events were ingested
 
+---
+
 ## Final Result
 At the end of this, Splunk was successfully collecting:
 - Authentication logs
@@ -170,7 +182,7 @@ All logs were continuously monitored and indexed, allowing for:
 
 This SIEM configuration served as the foundation for the internal credential compromise lab and all subsequent detection and investigation work.
 
-
+---
 
 # Part Two: Internal Credential Compromise Portion
 ## Overview
@@ -183,6 +195,8 @@ This scenario represents a common real-world situation such as stolen credential
 - Linux_Auth
 - Linux_Audit
 - Linux_Syslog
+
+---
 
 ## Phase 1: Initial Access (Brute Force Simulation)
 I started by simulating a brute force style login into a low-privileged account named:
@@ -198,6 +212,8 @@ followed by a success in the logs.
 
 #### Logs generated:
 - Linux_Auth
+
+---
 
 ## Phase 2: Reconnaissance as eviluser
 Once logged in, the attacker begins gathering information about the system.
@@ -226,6 +242,8 @@ This is a common real-world step attackers take after gaining access.
 - Linux_Audit (file access to /etc/passwd)
 - Linux_Syslog
 
+---
+
 ## Phase 3: Privilege Escalation via Password Reuse
 The attacker then attempts to become the privileged user.
 
@@ -244,6 +262,8 @@ This results in the attacker gaining access to an account with sudo privileges.
 
 #### Logs generated:
 - Linux_Auth (su authentication and session open)
+
+---
 
 ## Phase 4: System and Data Discovery as haydn
 With elevated privileges, the attacker searches the system for valuable data.
@@ -268,6 +288,8 @@ This approach is realistic because attackers typically enumerate directories rat
 - Linux_Audit
 - Linux_Syslog
 
+---
+
 ## Phase 5: Sensitive File Access
 The attacker reads the file:
 ```bash
@@ -279,6 +301,8 @@ At this point, the attacker has successfully accessed protected data.
 
 #### Logs generated:
 - Linux_Audit (file access)
+
+---
 
 ## Phase 6: Permission Tampering
 To ensure easier future access, the attacker weakens file permissions:
@@ -296,6 +320,8 @@ This allows any user to read, write, or modify the file.
 #### Logs generated:
 - Linux_Audit
 - Linux_Syslog
+
+---
 
 ## Phase 7: Data Exfiltration (Simulated)
 Since this is a single system lab, exfiltration was simulated by staging the data into the attacker’s account.
@@ -325,6 +351,8 @@ sudo chown eviluser:eviluser /home/eviluser/secret.txt
 - Linux_Audit
 - Linux_Syslog
 
+---
+
 ## Phase 8: Persistence (Backdoor Account)
 To maintain long-term access, the attacker creates a new admin account:
 ```bash
@@ -345,6 +373,8 @@ The name was chosen to look legitimate and blend in with system accounts.
 - Linux_Syslog
 - Linux_Auth
 
+---
+
 ## Final Result
 This lab successfully simulated:
 - Brute force login attempts
@@ -359,7 +389,7 @@ This lab successfully simulated:
 All activity generated realistic log data across authentication logs, audit logs, and system logs, which can now be analyzed and correlated in 
 Splunk to reconstruct the full attack timeline.
 
-
+---
 
 # Part Two: Attack Investigation and Log Analysis Using Splunk
 ## Overview
@@ -378,6 +408,8 @@ All analysis was performed using the previously ingested log sources:
 - Linux_Auth
 - Linux_Audit
 - Linux_Syslog
+
+---
 
 ## Phase 1: Detecting Initial Access (Brute Force Login)
 The investigation began by searching for authentication failures in the authentication logs:
@@ -418,6 +450,8 @@ sourcetype=Linux_Auth "session opened" eviluser
 ```
 
 This verified that the attacker successfully logged into the system as eviluser after the failed attempts.
+
+---
 
 ## Phase 2: Reconnaissance and Internal Enumeration
 After confirming the compromise of eviluser, audit logs were reviewed to understand what actions the attacker took next.
@@ -480,6 +514,8 @@ su haydn
 
 and gained access to an account with sudo rights.
 
+---
+
 ## Phase 4: Filesystem Discovery and Targeted Directory Enumeration
 Following privilege escalation, filesystem activity was analyzed.
 
@@ -525,6 +561,8 @@ This showed a clear progression:
 - Sensitive file interaction
 - Data staging into attacker-controlled storage
 
+---
+
 ## Phase 5: Data Exfiltration Staging
 Audit logs confirmed that the attacker:
 - Renamed secret.txt to 5ecret.txt
@@ -534,6 +572,8 @@ Audit logs confirmed that the attacker:
 This represented data staging in preparation for exfiltration via removable media or network transfer.
 
 This activity occurred only after privilege escalation, further confirming intent and planning.
+
+---
 
 ## Phase 6: Persistence via Backdoor Account Creation
 To investigate persistence, the previously observed account was examined:
@@ -561,6 +601,8 @@ This confirmed:
 
 Granting full administrative privileges.
 
+---
+
 ## Phase 7: Attribution Using uid and auid
 While reviewing the usermod event source logs, two key fields were identified:
 - uid = haydn
@@ -576,6 +618,8 @@ This confirms the full chain:
 - Creation of persistent backdoor sys_backup
 
 Even though the final actions were performed as haydn, audit logs preserved attribution to the original attacker account.
+
+---
 
 ## Final Result
 Using Splunk, the following attack chain was fully reconstructed:
