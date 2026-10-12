@@ -143,13 +143,13 @@ index=<INDEX> EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!="*$" Serv
 
 ### How Many Service Accounts, Which Account, and Where
 ```spl
-index=task2 EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!="*$" Service_Name!="krbtgt"
+index=<INDEX> EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!="*$" Service_Name!="krbtgt"
 | stats dc(Service_Name) as targeted_services count by Account_Name, Client_Address
 ```
 
 ### Detection Evasion VIA AES Cracking | Quantity-Based Hunting
 ```spl
-index=task2 EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
+index=<INDEX> EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
 | bin _time span=5m
 | stats dc(Service_Name) as unique_spns count by Account_Name, Client_Address, _time
 | where unique_spns > 5
@@ -173,7 +173,7 @@ index=<INDEX> EventCode=4768 Pre_Authentication_Type=0
 
 ### Checking for Normal Post-TGS Request (4679) or Logon (4624) Activity 
 ```spl
-index=task3 (EventCode=4624 OR EventCode=4769)
+index=<INDEX> (EventCode=4624 OR EventCode=4769)
 | search Account_Name="<ACCOUNT_NAME>"
 | table _time, EventCode, Account_Name, Client_Address
 ```
@@ -184,7 +184,7 @@ index=task3 (EventCode=4624 OR EventCode=4769)
 ## Credential Attacks: LSASS Credential Dumping
 ### Viewing All LSASS Traffic
 ```spl
-index=task4 EventCode=10 TargetImage="*\\lsass.exe"
+index=<INDEX> EventCode=10 TargetImage="*\\lsass.exe"
 | stats count by SourceImage, GrantedAccess
 ```
 
@@ -212,7 +212,7 @@ index=<INDEX> EventCode=4662 Access_Mask=0x100 user=<COMPROMISED_USER> "1131f6ad
 
 ### Finding the Originating Source IP
 ```spl
-index=task5 EventCode=4624 Logon_ID=<LOGON_ID>
+index=<INDEX> EventCode=4624 Logon_ID=<LOGON_ID>
 | table _time, host, user, Source_Network_Address, Logon_Type
 ```
 
@@ -227,19 +227,19 @@ index=<INDEX> EventCode=1 Image="*\ntdsutil.exe"
 
 ### Confirmation of Expected File Extraction
 ```spl 
-index=task6 EventCode=11 TargetFilename="*ntds.dit" Image="*\\ntdsutil.exe"
+index=<INDEX> EventCode=11 TargetFilename="*ntds.dit" Image="*\\ntdsutil.exe"
 | table _time, Image, TargetFilename
 ```
 
 ### Finding Shadow Copy Creation
 ```spl
-index=task6 EventCode=1 Image="*\vssadmin.exe" CommandLine="*create shadow*"
+index=<INDEX> EventCode=1 Image="*\vssadmin.exe" CommandLine="*create shadow*"
 | table _time, host, User, ParentImage, Image, CommandLine
 ```
 
 ### Correlating Shadow Copy Creation with Sensitive Files
 ```spl
-index=task6 EventCode=1 CommandLine="*HarddiskVolumeShadowCopy*" (CommandLine="*ntds*" OR CommandLine="*SYSTEM*")
+index=<INDEX> EventCode=1 CommandLine="*HarddiskVolumeShadowCopy*" (CommandLine="*ntds*" OR CommandLine="*SYSTEM*")
 | table _time, host, User, ParentImage, Image, CommandLine
 ```
 
