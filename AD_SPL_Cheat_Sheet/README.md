@@ -1,7 +1,8 @@
 # AD Splunk Cheat sheet
-A growing collection of production-ready Splunk Search Processing Language (SPL) queries and detection logic mapped to common Active Directory attack lifecycles—from initial access vectors to domain dominance. Designed for blue teams and SOC analysts streamlining telemetry triage.
+A growing collection of production-ready Splunk Search Processing Language (SPL) queries and detection logic mapped to common Active Directory attack lifecycles; from initial access vectors to domain dominance. Designed for blue teams and SOC analysts streamlining telemetry triage.
 
 ## Relevant Event IDs
+A quick-reference mapping of essential Windows Security Event IDs, Sysmon events, and Active Directory object audit logs required to power and validate the SPL queries in this repository.
 
 | Category | Event ID | Description |
 |---|---|---|
