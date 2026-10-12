@@ -1,4 +1,6 @@
 # AD Splunk Cheat sheet
+A growing collection of production-ready Splunk Search Processing Language (SPL) queries and detection logic mapped to common Active Directory attack lifecycles—from initial access vectors to domain dominance. Designed for blue teams and SOC analysts streamlining telemetry triage.
+
 ## Relevant Event IDs
 
 | Category | Event ID | Description |
@@ -34,6 +36,8 @@
 ---
 
 ## Initial Access: Web Shells
+Splunk queries tracking suspicious process creation spawned by web server worker processes, unexpected file writes in web roots, and anomalous application log indicators pointing to web shell deployment.
+
 ### Identify Scanning Activity
 ```spl
 index=iis sc_status=404
@@ -79,6 +83,8 @@ index=iis cs_method=POST cs_uri_query="*{WEBSHELL_FILENAME}"
 ---
 
 ## Initial Access: OWA Brute Force
+Detection queries analyzing Outlook on the Web authentication logs, highlighting high-frequency failed login attempts, anomalous user agent strings, and credential stuffing patterns against external endpoints.
+
 ### Find Authentication Failures Against OWA
 ```spl
 index=iis cs_uri_stem="/owa/auth.owa" cs_method=POST
@@ -112,6 +118,8 @@ index=iis c_ip="{ATTACKER_IP}"
 ---
 
 ## Initial Access: VPN Credential Attacks
+SPL rules focused on remote access gateway logs to surface improbable travel, brute-force spikes, and unauthorized session establishment attempts across VPN infrastructure.
+
 ### Identify the Scope of the Attack
 ```spl 
 index=win EventCode=6273
@@ -134,6 +142,8 @@ index=win EventCode IN (4624, 4625) user={COMPROMISED_USER}
 ---
 
 ## Credential Attacks: Kerberoasting
+Queries filtering Windows Security Event ID 4769 to isolate requests for Service Principal Names (SPNs) utilizing weak RC4 encryption (0x17) and service ticket request anomalies.
+
 ### Searching for RC4 Downgrading to Exclude Normal Traffic
 ```spl
 index=<INDEX> EventCode=4769 Ticket_Encryption_Type=0x17 Service_Name!="*$" Service_Name!="krbtgt"
@@ -158,6 +168,8 @@ index=<INDEX> EventCode=4769 Service_Name!="*$" Service_Name!="krbtgt"
 ---
 
 ## Credential Attacks: AS-REP Roasting
+Detection logic targeting Security Event ID 4768 to identify account requests against domain user objects configured with "Do not require Kerberos preauthentication" enabled.
+
 ### Taking a Look at Normal TGT Traffic
 ```spl
 index=<INDEX> EventCode=4768
@@ -182,6 +194,8 @@ index=<INDEX> (EventCode=4624 OR EventCode=4769)
 ---
 
 ## Credential Attacks: LSASS Credential Dumping
+SPL searches monitoring process access requests (Event ID 4656/4663) and Sysmon Event ID 10 targeting `lsass.exe` with suspicious handle permissions like `PROCESS_VM_READ`.
+
 ### Viewing All LSASS Traffic
 ```spl
 index=<INDEX> EventCode=10 TargetImage="*\\lsass.exe"
@@ -197,6 +211,8 @@ index=<INDEX> EventCode=10 TargetImage="*\\lsass.exe" SourceImage=<SUSPICIOUS_PR
 ---
 
 ## Credential Attacks: DCSync 
+Queries correlating Directory Service object access (Event ID 4662) with security logs to spot non-machine accounts requesting replication rights (`GetChanges` and `GetChangesAll`).
+
 ### Searching for DS-Replication-Get-Changes-All (1131f6ad) and Filtering Machine Accounts
 ```spl
 index=<INDEX> EventCode=4662 "1131f6ad" user!="*$"
@@ -219,6 +235,8 @@ index=<INDEX> EventCode=4624 Logon_ID=<LOGON_ID>
 ---
 
 ## Credential Attacks: NTDS.dit Extraction 
+Detection logic tracking volume shadow copy creation (such as `vssadmin` or `diskshadow`), raw volume access, or suspicious file operations touching the Active Directory database file.
+
 ### Finding `ntdsutil.exe` as an Extraction Method
 ```spl
 index=<INDEX> EventCode=1 Image="*\ntdsutil.exe"
